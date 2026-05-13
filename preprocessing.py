@@ -2,40 +2,31 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 
-# ================= DOWNLOAD NLTK DATA =================
-try:
-    nltk.data.find("tokenizers/punkt")
-except:
-    nltk.download("punkt")
+# Download required data
+for resource in ["punkt", "stopwords", "wordnet", "omw-1.4"]:
+    try:
+        nltk.data.find(f"corpora/{resource}")
+    except:
+        nltk.download(resource)
 
-try:
-    nltk.data.find("corpora/stopwords")
-except:
-    nltk.download("stopwords")
-
-# ================= STOPWORDS =================
 STOP_WORDS = set(stopwords.words("english"))
+lemmatizer = WordNetLemmatizer()
 
-# ================= PREPROCESS TEXT =================
 def preprocess_text(text):
-
-    # Lowercase
+    # Lowercase and remove symbols
     text = text.lower()
-
-    # Remove symbols/numbers
     text = re.sub(r"[^a-zA-Z\s]", " ", text)
-
+    
     # Tokenize
     tokens = word_tokenize(text)
-
-    # Remove stopwords
-    filtered_tokens = [
-        word for word in tokens
+    
+    # Remove stopwords and Lemmatize
+    cleaned_tokens = [
+        lemmatizer.lemmatize(word) 
+        for word in tokens 
         if word not in STOP_WORDS and len(word) > 2
     ]
-
-    # Join back
-    cleaned_text = " ".join(filtered_tokens)
-
-    return cleaned_text.strip()
+    
+    return " ".join(cleaned_tokens)

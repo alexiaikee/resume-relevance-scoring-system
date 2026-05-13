@@ -54,22 +54,24 @@ st.markdown("""
     padding: 12px;
     font-weight: 600;
     border: none;
+    width: 100%;
 }
 
-.score-good { color:#16A34A; font-size:42px; font-weight:700; }
-.score-mid { color:#F59E0B; font-size:42px; font-weight:700; }
-.score-bad { color:#DC2626; font-size:42px; font-weight:700; }
+.score-good { color:#16A34A; font-size:48px; font-weight:700; }
+.score-mid { color:#F59E0B; font-size:48px; font-weight:700; }
+.score-bad { color:#DC2626; font-size:48px; font-weight:700; }
 
 .tag {
     display:inline-block;
-    padding:6px 10px;
+    padding:6px 12px;
     margin:4px;
     border-radius:8px;
-    font-size:13px;
+    font-size:14px;
+    font-weight: 500;
 }
 
-.tag-good { background:#DCFCE7; color:#166534; }
-.tag-miss { background:#FEE2E2; color:#991B1B; }
+.tag-good { background:#DCFCE7; color:#166534; border: 1px solid #BBF7D0; }
+.tag-miss { background:#FEE2E2; color:#991B1B; border: 1px solid #FECACA; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -89,7 +91,7 @@ with col2:
             Resume Relevance Scoring System
         </div>
         <div style="color:#64748B; font-size:16px;">
-            NLP-based evaluation using TF-IDF and cosine similarity
+            AI-based evaluation using TF-IDF and Cosine Similarity
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -105,120 +107,138 @@ if "results" not in st.session_state:
 # ================= NAV =================
 page = st.sidebar.radio("Navigation", ["Upload & Analyze", "Dashboard"])
 
-# ================= UPLOAD =================
+# ================= UPLOAD PAGE =================
 if page == "Upload & Analyze":
 
     st.markdown("<div class='card'>", unsafe_allow_html=True)
 
     st.subheader("Upload Resumes and Job Description")
-    st.info("Upload up to 3 resumes for comparison.")
+    st.info("Upload up to 3 resumes to compare against the target job requirements.")
 
-    job_desc = st.text_area("Job Description", height=220)
+    job_desc = st.text_area("Target Job Description", height=220, placeholder="Paste the job responsibilities and requirements here...")
 
     uploaded_files = st.file_uploader(
-        "Upload Resume Files",
+        "Upload Resume Files (PDF/DOCX)",
         type=["pdf", "docx"],
         accept_multiple_files=True
     )
 
     if uploaded_files and len(uploaded_files) > MAX_RESUMES:
-        st.error("Maximum 3 resumes allowed.")
+        st.error(f"Maximum {MAX_RESUMES} resumes allowed.")
         st.stop()
 
-    if st.button("Run Analysis"):
-
+    if st.button("Run AI Analysis"):
         if not uploaded_files or not job_desc.strip():
-            st.warning("Please provide resumes and job description.")
+            st.warning("Please provide at least one resume and a job description.")
         else:
             results = []
 
-            with st.spinner("Analyzing..."):
+            # ADDED: Improved spinner text for academic professionalism
+            with st.spinner("Applying NLP Pipeline: Preprocessing, TF-IDF Vectorization, and Cosine Similarity..."):
 
                 for file in uploaded_files:
-
+                    # 1. Extraction
                     resume_text = extract_text_from_file(file)
+                    
+                    # 2. NLP Engine (using updated Cosine Similarity)
                     scores = compute_similarity(job_desc, resume_text)
 
+                    # 3. Scoring & Feedback
                     final_score, breakdown = weighted_score(scores)
                     feedback = generate_feedback(scores)
-
-                    # ✅ USE REAL ATS OUTPUT
                     ats = ats_feedback(resume_text, job_desc)
 
                     results.append({
                         "Candidate": file.name,
                         "Total Score": final_score,
-                        "Skills": round(breakdown["skills"], 2),
-                        "Experience": round(breakdown["experience"], 2),
-                        "Education": round(breakdown["education"], 2),
+                        "Skills": breakdown["skills"],
+                        "Experience": breakdown["experience"],
+                        "Education": breakdown["education"],
                         "Feedback": feedback,
                         "ATS Score": ats["score"],
                         "ATS Message": ats["message"],
-                        "Matched": ats["matched"],
-                        "Missing": ats["missing"]
+                        "Matched": scores["skills_matched"], # Uses actual matched list from nlpengine
+                        "Missing": scores["skills_missing"]  # Uses actual missing list from nlpengine
                     })
 
             st.session_state.results = results
-            st.success("Analysis completed.")
+            st.success("Analysis completed! Head to the Dashboard to see results.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= DASHBOARD =================
+# ================= DASHBOARD PAGE =================
 elif page == "Dashboard":
 
     if not st.session_state.results:
-        st.info("No results yet.")
+        st.info("No results yet. Please upload and analyze resumes first.")
     else:
-
         df = pd.DataFrame(st.session_state.results)
+        
+        # Highlight best match
         best = df.sort_values(by="Total Score", ascending=False).iloc[0]
+        st.success(f"🏆 **Best Match Found:** {best['Candidate']} with a score of {best['Total Score']}%")
 
-        st.success(f"Best Resume: {best['Candidate']} ({best['Total Score']}%)")
-
-        selected = st.selectbox("Select Resume", df["Candidate"])
-
+        # Select individual resume to view
+        selected = st.selectbox("Select Candidate to Review", df["Candidate"])
         data = df[df["Candidate"] == selected].iloc[0]
 
+        # Overall Score Card
         score = data["Total Score"]
         cls = "score-good" if score >= 75 else "score-mid" if score >= 50 else "score-bad"
 
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-
-        st.markdown("### Overall Score")
+        st.markdown("### Relevance Score")
         st.markdown(f"<div class='{cls}'>{score}%</div>", unsafe_allow_html=True)
+        
+        # ADDED: Transparency note for FYP requirements
+        st.caption("Weightage: 50% Skills Match, 30% Experience Match, 20% Education Match.")
 
         col1, col2, col3 = st.columns(3)
-        col1.metric("Skills", f"{data['Skills']}%")
-        col2.metric("Experience", f"{data['Experience']}%")
-        col3.metric("Education", f"{data['Education']}%")
-
-        st.markdown("### Feedback")
-        st.info(data["Feedback"])
-
-        # ✅ CLEAN ATS DISPLAY
-        st.markdown("### ATS Analysis")
-        st.metric("ATS Score", f"{data['ATS Score']}%")
-        st.caption(data["ATS Message"])
-
-        # ✅ SKILLS TAGS (REAL)
-        st.markdown("### Matched Skills")
-        for skill in data["Matched"]:
-            st.markdown(f"<span class='tag tag-good'>{skill}</span>", unsafe_allow_html=True)
-
-        st.markdown("### Missing Skills")
-        for skill in data["Missing"]:
-            st.markdown(f"<span class='tag tag-miss'>{skill}</span>", unsafe_allow_html=True)
-
+        col1.metric("Skills Alignment", f"{data['Skills']}%")
+        col2.metric("Experience Relevance", f"{data['Experience']}%")
+        col3.metric("Education Fit", f"{data['Education']}%")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # TABLE
+        # ADDED: Side-by-Side Skill Gap Analysis (UX Improvement)
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader("Comparison Table")
+        st.markdown("### Skill Gap Analysis")
+        
+        col_match, col_miss = st.columns(2)
+        
+        with col_match:
+            st.markdown("**✅ Matched Skills**")
+            if data["Matched"]:
+                for skill in data["Matched"]:
+                    st.markdown(f"<span class='tag tag-good'>{skill}</span>", unsafe_allow_html=True)
+            else:
+                st.write("No direct skill matches found.")
 
+        with col_miss:
+            st.markdown("**❌ Missing Skills / Areas for Improvement**")
+            if data["Missing"]:
+                for skill in data["Missing"]:
+                    st.markdown(f"<span class='tag tag-miss'>{skill}</span>", unsafe_allow_html=True)
+            else:
+                st.write("No missing skills identified.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Professional Feedback
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("### Improvement Suggestions")
+        st.info(data["Feedback"])
+        
+        # ATS Deep Dive
+        st.markdown("#### ATS Optimization Check")
+        st.write(f"**Score:** {data['ATS Score']}%")
+        st.write(data['ATS Message'])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Comparison Table
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.subheader("All Candidates Comparison")
+        summary_df = df.drop(columns=["Feedback", "Matched", "Missing", "ATS Message"])
         st.dataframe(
-            df.drop(columns=["Feedback", "Matched", "Missing", "ATS Message"])
-            .sort_values(by="Total Score", ascending=False),
+            summary_df.sort_values(by="Total Score", ascending=False),
             use_container_width=True
         )
-
         st.markdown("</div>", unsafe_allow_html=True)

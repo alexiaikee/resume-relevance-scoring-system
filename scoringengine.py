@@ -1,9 +1,10 @@
 def weighted_score(scores):
+    # Weights based on your scoring logic
+    skill_weight = 0.50
+    exp_weight = 0.30
+    edu_weight = 0.20
 
-    skill_weight = 0.5
-    exp_weight = 0.3
-    edu_weight = 0.2
-
+    # We use the Skill score (which is more specific) for the main weight
     final_score = (
         scores["skills"] * skill_weight +
         scores["experience"] * exp_weight +
