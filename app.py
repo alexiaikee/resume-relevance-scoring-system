@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import os
 
-from modules.fileparser import extract_text_from_file
-from modules.nlpengine import compute_similarity
-from modules.scoringengine import weighted_score
-from modules.feedbackengine import generate_feedback, ats_feedback
+from fileparser import extract_text_from_file
+from nlpengine import compute_similarity
+from scoringengine import weighted_score
+from feedbackengine import generate_feedback, ats_feedback
 
 # ================= PAGE CONFIG =================
 st.set_page_config(

@@ -1,4 +1,4 @@
-from modules.skills import SKILL_KEYWORDS
+from preprocessing import preprocess_text
 
 
 def extract_skills(text):
