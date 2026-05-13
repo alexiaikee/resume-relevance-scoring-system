@@ -1,5 +1,6 @@
 import re
-from skills import  preprocess_text
+from preprocessing import preprocess_text
+from skills import SKILL_KEYWORDS
 
 
 # ================= CLEAN TEXT =================
