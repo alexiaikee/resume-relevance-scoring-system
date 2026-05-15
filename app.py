@@ -11,7 +11,7 @@ from feedbackengine import generate_feedback, ats_feedback
 # ================= PAGE CONFIG =================
 st.set_page_config(page_title="UNIMAS Resume Relevance Scorer", layout="wide")
 
-# ================= CUSTOM CSS (Shading & Depth) =================
+# ================= CUSTOM CSS (Shading, Depth & Alert Button) =================
 st.markdown("""
 <style>
     .stApp { background-color: #F8FAFC; font-family: 'Inter', sans-serif; }
@@ -33,6 +33,26 @@ st.markdown("""
         border-radius: 12px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         margin-bottom: 20px;
+    }
+
+    /* ALERT BUTTON CSS */
+    div.stButton > button:first-child {
+        background-color: #4F46E5 !important; /* Premium Indigo */
+        color: white !important;
+        border: none !important;
+        padding: 15px 30px !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
+        box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39) !important;
+        transition: all 0.2s ease-in-out !important;
+        width: 100%;
+    }
+
+    div.stButton > button:first-child:hover {
+        background-color: #059669 !important; /* Success Green on Hover */
+        transform: scale(1.02) !important;
+        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.23) !important;
     }
 
     .label-shade {
@@ -65,9 +85,7 @@ with st.sidebar:
     st.markdown("<p style='color:#6366F1; font-size:12px; font-weight:600; margin-top:-15px;'>NLP RELEVANCE ENGINE</p>", unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # NAVIGATION NAMES (These MUST match the if/elif below)
-    page = st.radio("WORKFLOW", ["Dashboard", "Analysis Insights"])
+    page = st.radio("WORKFLOW", ["Evaluation Workspace", "Analysis Insights"])
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:10px; color:#94A3B8; font-weight:800; letter-spacing:0.1em;'>SYSTEM STATE</p>", unsafe_allow_html=True)
@@ -78,7 +96,7 @@ with st.sidebar:
     st.success("SYSTEM READY")
 
 # ================= WORKFLOW: EVALUATION WORKSPACE =================
-if page == "Dashboard":
+if page == "Evaluation Workspace":
     st.markdown("""
         <div class="title-container">
             <h1 style="color:#FFFFFF; font-size:30px; font-weight:800; margin:0;">Resume Relevance Scoring System</h1>
@@ -103,10 +121,11 @@ if page == "Dashboard":
         st.info("System optimized for PDF and DOCX formats.")
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # RUN ANALYSIS BUTTON SECTION
     st.markdown("<br>", unsafe_allow_html=True)
     _, center_col, _ = st.columns([1.5, 1, 1.5])
     with center_col:
-        if st.button("RUN AI ANALYSIS", use_container_width=True):
+        if st.button("RUN AI ANALYSIS"):
             if not uploaded_files or not job_desc.strip():
                 st.error("Protocol Error: Provide input data.")
             else:
@@ -123,7 +142,7 @@ if page == "Dashboard":
                             "Matched": scores["skills_matched"], "Missing": scores["skills_missing"]
                         })
                     st.session_state.results = results
-                    st.success("Analysis Complete! Switch to 'Analysis Insights' in the sidebar.")
+                    st.success("Analysis Complete! Head to 'Analysis Insights' in the sidebar.")
 
 # ================= WORKFLOW: ANALYSIS INSIGHTS =================
 elif page == "Analysis Insights":
