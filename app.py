@@ -85,7 +85,7 @@ with st.sidebar:
     st.markdown("<p style='color:#6366F1; font-size:12px; font-weight:600; margin-top:-15px;'>NLP RELEVANCE ENGINE</p>", unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    # UPDATED NAVIGATION
+    # NAVIGATION (Dashboard is default)
     page = st.radio("WORKFLOW", ["Dashboard", "Analysis Insights"])
     
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -94,7 +94,14 @@ with st.sidebar:
     stats = {"CORE": "Python 3.14", "ENGINE": "TF-IDF", "METRIC": "Cosine", "LIB": "NLTK v3.8"}
     for label, val in stats.items():
         st.markdown(f"<div class='status-item'>{label} <span class='status-value'>{val}</span></div>", unsafe_allow_html=True)
-    st.success("SYSTEM READY")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # DATA PERSISTENCE INDICATOR
+    if "results" in st.session_state and st.session_state.results:
+        st.info("📊 Analysis Data Cached")
+    else:
+        st.success("SYSTEM READY")
 
 # ================= WORKFLOW: DASHBOARD (INPUT) =================
 if page == "Dashboard":
@@ -154,6 +161,7 @@ if page == "Dashboard":
 
 # ================= WORKFLOW: ANALYSIS INSIGHTS =================
 elif page == "Analysis Insights":
+    # Using st.session_state.results keeps data temporary until new analysis
     if "results" not in st.session_state or not st.session_state.results:
         st.warning("⚠️ No data analyzed yet. Please go to 'Dashboard' and click 'Run AI Analysis' first.")
     else:
