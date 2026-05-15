@@ -14,32 +14,27 @@ st.set_page_config(page_title="UNIMAS Resume Relevance Scorer", layout="wide")
 # ================= CUSTOM CSS (Shading & Depth) =================
 st.markdown("""
 <style>
-    /* Main Background */
     .stApp { background-color: #F8FAFC; font-family: 'Inter', sans-serif; }
-    
-    /* Sidebar Styling */
     [data-testid="stSidebar"] { background-color: #FFFFFF; border-right: 1px solid #E2E8F0; }
 
-    /* TITLE SHADING: This creates the shaded block behind your title */
     .title-container {
-        background-color: #1E293B; /* Deep Slate Shading */
+        background-color: #1E293B;
         padding: 40px 50px;
         border-radius: 12px;
         margin-bottom: 30px;
-        border-left: 6px solid #6366F1; /* Indigo accent line */
+        border-left: 6px solid #6366F1;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    /* CARD SHADING: Subtly shades the input areas */
     .input-card {
         background-color: #FFFFFF;
         border: 1px solid #E2E8F0;
         padding: 24px;
         border-radius: 12px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        margin-bottom: 20px;
     }
 
-    /* LABEL SHADING: Small shaded boxes for headers */
     .label-shade {
         background-color: #F1F5F9;
         color: #475569;
@@ -52,7 +47,6 @@ st.markdown("""
         margin-bottom: 12px;
     }
 
-    /* System Status Items */
     .status-item {
         display: flex;
         justify-content: space-between;
@@ -65,13 +59,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================= SIDEBAR (System State) =================
+# ================= SIDEBAR =================
 with st.sidebar:
     st.markdown("<h2 style='color:#1E293B; font-size:22px; font-weight:800;'>UNIMAS FYP</h2>", unsafe_allow_html=True)
     st.markdown("<p style='color:#6366F1; font-size:12px; font-weight:600; margin-top:-15px;'>NLP RELEVANCE ENGINE</p>", unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    page = st.radio("NAVIGATION", ["Dashboard", "Pool", "Documentation"])
+    
+    # NAVIGATION NAMES (These MUST match the if/elif below)
+    page = st.radio("WORKFLOW", ["Evaluation Workspace", "Analysis Insights"])
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:10px; color:#94A3B8; font-weight:800; letter-spacing:0.1em;'>SYSTEM STATE</p>", unsafe_allow_html=True)
@@ -81,9 +77,8 @@ with st.sidebar:
         st.markdown(f"<div class='status-item'>{label} <span class='status-value'>{val}</span></div>", unsafe_allow_html=True)
     st.success("SYSTEM READY")
 
-# ================= MAIN CONTENT =================
-if page == "Dashboard":
-    # THE SHADED TITLE SECTION
+# ================= WORKFLOW: EVALUATION WORKSPACE =================
+if page == "Evaluation Workspace":
     st.markdown("""
         <div class="title-container">
             <h1 style="color:#FFFFFF; font-size:30px; font-weight:800; margin:0;">Resume Relevance Scoring System</h1>
@@ -93,13 +88,12 @@ if page == "Dashboard":
         </div>
     """, unsafe_allow_html=True)
     
-    # Inputs with Shaded Cards
     col_jd, col_res = st.columns(2, gap="large")
     
     with col_jd:
         st.markdown("<div class='input-card'>", unsafe_allow_html=True)
         st.markdown("<div class='label-shade'>JOB DESCRIPTION INPUT</div>", unsafe_allow_html=True)
-        job_desc = st.text_area("JD_Input", height=300, label_visibility="collapsed", placeholder="Paste official job description requirements here...")
+        job_desc = st.text_area("JD_Input", height=300, label_visibility="collapsed", placeholder="Paste requirements here...")
         st.markdown("</div>", unsafe_allow_html=True)
         
     with col_res:
@@ -109,7 +103,6 @@ if page == "Dashboard":
         st.info("System optimized for PDF and DOCX formats.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Run Button
     st.markdown("<br>", unsafe_allow_html=True)
     _, center_col, _ = st.columns([1.5, 1, 1.5])
     with center_col:
@@ -118,5 +111,53 @@ if page == "Dashboard":
                 st.error("Protocol Error: Provide input data.")
             else:
                 with st.spinner("Analyzing..."):
-                    # (Your Analysis Logic Here)
-                    pass
+                    results = []
+                    for file in uploaded_files:
+                        text = extract_text_from_file(file)
+                        scores = compute_similarity(job_desc, text)
+                        final, breakdown = weighted_score(scores)
+                        results.append({
+                            "Candidate": file.name, "Total Score": final,
+                            "Skills": breakdown["skills"], "Experience": breakdown["experience"],
+                            "Education": breakdown["education"], "Feedback": generate_feedback(scores),
+                            "Matched": scores["skills_matched"], "Missing": scores["skills_missing"]
+                        })
+                    st.session_state.results = results
+                    st.success("Analysis Complete! Switch to 'Analysis Insights' in the sidebar.")
+
+# ================= WORKFLOW: ANALYSIS INSIGHTS =================
+elif page == "Analysis Insights":
+    if "results" not in st.session_state or not st.session_state.results:
+        st.warning("⚠️ No data analyzed yet. Please go to 'Evaluation Workspace' and click 'Run AI Analysis' first.")
+    else:
+        st.markdown("## Analysis Insights")
+        df = pd.DataFrame(st.session_state.results)
+        selected = st.selectbox("Select Candidate", df["Candidate"])
+        data = df[df["Candidate"] == selected].iloc[0]
+
+        # Charts Section
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("<div class='input-card'>", unsafe_allow_html=True)
+            fig = go.Figure(go.Indicator(mode="gauge+number", value=data["Total Score"], number={'suffix': "%"}, gauge={'bar': {'color': "#6366F1"}}))
+            fig.update_layout(height=250, margin=dict(t=30, b=10))
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown("<div class='input-card'>", unsafe_allow_html=True)
+            fig_r = go.Figure(go.Scatterpolar(r=[data['Skills'], data['Experience'], data['Education']], theta=['Skills', 'Experience', 'Education'], fill='toself'))
+            fig_r.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=250, margin=dict(t=30, b=30))
+            st.plotly_chart(fig_r, use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # Skill Gaps
+        st.markdown("<div class='input-card'>", unsafe_allow_html=True)
+        st.markdown("### Skill Gap Analysis")
+        cm, cmiss = st.columns(2)
+        with cm:
+            st.success("**Matched Skills**")
+            for s in data["Matched"]: st.write(f"✅ {s}")
+        with cmiss:
+            st.error("**Missing Skills**")
+            for s in data["Missing"]: st.write(f"❌ {s}")
+        st.markdown("</div>", unsafe_allow_html=True)
