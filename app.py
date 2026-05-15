@@ -9,95 +9,80 @@ from scoringengine import weighted_score
 from feedbackengine import generate_feedback, ats_feedback
 
 # ================= PAGE CONFIG =================
-st.set_page_config(
-    page_title="Resume Relevance Scoring System",
-    layout="wide"
-)
+st.set_page_config(page_title="UNIMAS FYP - NLP Scoring", layout="wide")
 
-# ================= PATH =================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-logo_path = os.path.join(BASE_DIR, "assets", "logo.png")
-
-# ================= UI STYLE (AI Studio Inspired) =================
+# ================= UI STYLE (The "AI Studio" Look) =================
 st.markdown("""
 <style>
-.block-container { padding-top: 1rem; }
-.stApp { background-color: #FBFBFE; font-family: 'Inter', sans-serif; }
+    .stApp { background-color: #F8FAFC; }
+    
+    /* Sidebar Styling - Dark Professional */
+    [data-testid="stSidebar"] {
+        background-color: #111827;
+        color: #FFFFFF;
+    }
+    [data-testid="stSidebar"] * { color: #FFFFFF !important; }
 
-/* Sidebar Styling */
-[data-testid="stSidebar"] { background-color: #111827; color: white; }
-[data-testid="stSidebar"] * { color: white !important; }
-
-/* AI Studio Card Style */
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #E5E7EB;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-bottom: 15px; /* Tightened margin to remove ugly gaps */
-}
-
-.stButton > button {
-    background: #4F46E5;
-    color: white;
-    border-radius: 6px;
-    padding: 10px;
-    border: none;
-    transition: 0.3s;
-}
-.stButton > button:hover { background: #4338CA; }
-
-.tag {
-    display:inline-block;
-    padding:4px 10px;
-    margin:4px;
-    border-radius:6px;
-    font-size:13px;
-    font-weight: 500;
-}
-.tag-good { background:#DCFCE7; color:#166534; border: 1px solid #BBF7D0; }
-.tag-miss { background:#FEE2E2; color:#991B1B; border: 1px solid #FECACA; }
+    /* Custom Card Design */
+    .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+        margin-bottom: 15px;
+    }
+    
+    /* System State Sidebar items */
+    .system-status {
+        padding: 10px;
+        border-radius: 8px;
+        background: #1F2937;
+        border-left: 4px solid #4F46E5;
+        margin-bottom: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= SIDEBAR (Technical Methodology) =================
-st.sidebar.title("⚙️ System Control")
-page = st.sidebar.radio("Navigation", ["Upload & Analyze", "Dashboard"])
+# ================= SIDEBAR =================
+with st.sidebar:
+    st.image("assets/logo.png", width=120) if os.path.exists("assets/logo.png") else st.title("UNIMAS FYP")
+    st.markdown("### SYSTEM STATE")
+    st.markdown("<div class='system-status'>🟢 CORE ENGINE: Python 3.14</div>", unsafe_allow_html=True)
+    st.markdown("<div class='system-status'>🔵 VECTORIZER: TF-IDF ACTIVE</div>", unsafe_allow_html=True)
+    st.markdown("<div class='system-status'>🟣 METRIC: COSINE SIMILARITY</div>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    page = st.radio("NAVIGATION", ["Upload & Analyze", "Dashboard"])
+    st.markdown("---")
+    st.caption("Developed by Alexia Ijau Kee")
+    st.success("SYSTEM READY")
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("🛠️ Technical Methodology")
-st.sidebar.caption("FYP Phase: Evaluation Prototype")
-st.sidebar.write("**AI Model:** TF-IDF Vectorizer")
-st.sidebar.write("**Metric:** Cosine Similarity")
-st.sidebar.write("**Language:** Python 3.14")
-st.sidebar.write("**NLP Library:** NLTK (Lemmatization)")
-st.sidebar.markdown("---")
-st.sidebar.info("Developed by Alexia Ijau Kee")
-
-# ================= HEADER =================
-col1, col2 = st.columns([1, 5])
-with col1:
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=120)
-with col2:
-    st.title("Resume Relevance Scoring System")
-    st.caption("Advanced NLP-based Recruitment Evaluation")
-
-# ================= SESSION =================
-if "results" not in st.session_state:
-    st.session_state.results = []
-
-# ================= UPLOAD PAGE =================
+# ================= MAIN CONTENT =================
 if page == "Upload & Analyze":
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Input Data")
-    job_desc = st.text_area("Target Job Description", height=200)
-    uploaded_files = st.file_uploader("Upload Resumes", type=["pdf", "docx"], accept_multiple_files=True)
+    st.title("Resume Relevance Scoring System")
+    st.caption("NLP-Based Recruitment Evaluation Prototype")
 
-    if st.button("Generate AI Insights"):
-        if uploaded_files and job_desc.strip():
-            with st.spinner("Processing NLP Pipeline..."):
+    # TWO-COLUMN INPUT (Removes the "Ugly Gaps")
+    col_jd, col_file = st.columns([1, 1], gap="medium")
+
+    with col_jd:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.subheader("📝 Job Description")
+        job_desc = st.text_area("Paste Requirements Here", height=250, placeholder="Enter the JD text...")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with col_file:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.subheader("📂 Resume Dropzone")
+        uploaded_files = st.file_uploader("Upload PDF or DOCX (Max 3)", type=["pdf", "docx"], accept_multiple_files=True)
+        st.info("Supported formats: .pdf, .docx")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.button("RUN AI ANALYSIS", use_container_width=True):
+        if not uploaded_files or not job_desc.strip():
+            st.error("Missing Input: Please provide both JD and Resumes.")
+        else:
+            with st.spinner("Applying NLP Pipeline..."):
                 results = []
                 for file in uploaded_files:
                     text = extract_text_from_file(file)
@@ -112,76 +97,51 @@ if page == "Upload & Analyze":
                         "Matched": scores["skills_matched"], "Missing": scores["skills_missing"]
                     })
                 st.session_state.results = results
-                st.success("Analysis complete!")
-        else:
-            st.warning("Please provide all inputs.")
-    st.markdown("</div>", unsafe_allow_html=True)
+                st.balloons()
+                st.success("Analysis Complete! Switch to Dashboard.")
 
-# ================= DASHBOARD PAGE =================
+# ================= DASHBOARD =================
 elif page == "Dashboard":
-    if not st.session_state.results:
-        st.info("Please upload data first.")
+    if not st.session_state.get("results"):
+        st.warning("No data found. Please run the analysis first.")
     else:
         df = pd.DataFrame(st.session_state.results)
-        selected = st.selectbox("Select Candidate", df["Candidate"])
+        selected = st.selectbox("REVIEW CANDIDATE", df["Candidate"])
         data = df[df["Candidate"] == selected].iloc[0]
 
-        # --- ROW 1: Gauge and Radar ---
-        col_gauge, col_radar = st.columns([1, 1])
-
-        with col_gauge:
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
-            fig_gauge = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=data["Total Score"],
-                title={'text': "Relevance Score"},
-                gauge={'axis': {'range': [0, 100]},
-                       'bar': {'color': "#4F46E5"},
-                       'steps': [{'range': [0, 50], 'color': "#FEE2E2"},
-                                 {'range': [50, 75], 'color': "#FEF3C7"},
-                                 {'range': [75, 100], 'color': "#DCFCE7"}]}))
-            fig_gauge.update_layout(height=300, margin=dict(t=50, b=0, l=20, r=20))
-            st.plotly_chart(fig_gauge, use_container_width=True)
-            st.caption("Weightage: 50% Skills, 30% Experience, 20% Education")
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        with col_radar:
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
-            categories = ['Skills Alignment', 'Experience Relevance', 'Education Fit']
-            fig_radar = go.Figure()
-            fig_radar.add_trace(go.Scatterpolar(
-                r=[data['Skills'], data['Experience'], data['Education']],
-                theta=categories, fill='toself', line_color='#4F46E5'
-            ))
-            fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-                                    showlegend=False, height=300, margin=dict(t=40, b=40, l=40, r=40))
-            st.plotly_chart(fig_radar, use_container_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        # --- ROW 2: Skill Gap Analysis ---
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("### Skill Gap Analysis")
+        # TOP ROW: Visual Insights
         c1, c2 = st.columns(2)
+        
         with c1:
-            st.write("✅ **Matched**")
-            if data["Matched"]:
-                for s in data["Matched"]: st.markdown(f"<span class='tag tag-good'>{s}</span>", unsafe_allow_html=True)
-            else: st.caption("None found")
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            # GAUGE CHART
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number", value=data["Total Score"],
+                title={'text': "Relevance Score", 'font': {'size': 20}},
+                gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#4F46E5"}}
+            ))
+            fig.update_layout(height=280, margin=dict(t=30, b=0, l=10, r=10))
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
         with c2:
-            st.write("❌ **Missing**")
-            if data["Missing"]:
-                for s in data["Missing"]: st.markdown(f"<span class='tag tag-miss'>{s}</span>", unsafe_allow_html=True)
-            else: st.caption("No gaps detected")
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            # RADAR CHART
+            categories = ['Skills', 'Experience', 'Education']
+            fig_r = go.Figure()
+            fig_r.add_trace(go.Scatterpolar(r=[data['Skills'], data['Experience'], data['Education']], theta=categories, fill='toself'))
+            fig_r.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=280, margin=dict(t=30, b=30))
+            st.plotly_chart(fig_r, use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- ROW 3: Feedback ---
+        # BOTTOM ROW: Skill Gaps
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("### Improvement Suggestions")
-        st.info(data["Feedback"])
-        st.markdown(f"**ATS Optimization Check:** {data['ATS Score']}% - {data['ATS Message']}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # --- ROW 4: Comparison Table ---
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.dataframe(df.drop(columns=["Feedback", "Matched", "Missing", "ATS Message"]), use_container_width=True)
+        st.subheader("Skill Gap Analysis")
+        col_m, col_ms = st.columns(2)
+        with col_m:
+            st.write("✅ **MATCHED**")
+            for s in data["Matched"]: st.info(s) if s else st.write("None")
+        with col_ms:
+            st.write("❌ **MISSING**")
+            for s in data["Missing"]: st.error(s) if s else st.write("None")
         st.markdown("</div>", unsafe_allow_html=True)
