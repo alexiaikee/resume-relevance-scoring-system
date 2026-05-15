@@ -67,7 +67,7 @@ with st.sidebar:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # NAVIGATION NAMES (These MUST match the if/elif below)
-    page = st.radio("WORKFLOW", ["Evaluation Workspace", "Analysis Insights"])
+    page = st.radio("WORKFLOW", ["Dashboard", "Analysis Insights"])
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:10px; color:#94A3B8; font-weight:800; letter-spacing:0.1em;'>SYSTEM STATE</p>", unsafe_allow_html=True)
@@ -78,7 +78,7 @@ with st.sidebar:
     st.success("SYSTEM READY")
 
 # ================= WORKFLOW: EVALUATION WORKSPACE =================
-if page == "Evaluation Workspace":
+if page == "Dashboard":
     st.markdown("""
         <div class="title-container">
             <h1 style="color:#FFFFFF; font-size:30px; font-weight:800; margin:0;">Resume Relevance Scoring System</h1>
