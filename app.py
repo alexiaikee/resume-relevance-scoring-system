@@ -95,8 +95,8 @@ with st.sidebar:
         st.markdown(f"<div class='status-item'>{label} <span class='status-value'>{val}</span></div>", unsafe_allow_html=True)
     st.success("SYSTEM READY")
 
-# ================= WORKFLOW: EVALUATION WORKSPACE =================
-if page == "Evaluation Workspace":
+# ================= WORKFLOW: DASHBOARD =================
+if page == "Dashboard":
     st.markdown("""
         <div class="title-container">
             <h1 style="color:#FFFFFF; font-size:30px; font-weight:800; margin:0;">Resume Relevance Scoring System</h1>
@@ -179,4 +179,19 @@ elif page == "Analysis Insights":
         with cmiss:
             st.error("**Missing Skills**")
             for s in data["Missing"]: st.write(f"❌ {s}")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # NEW: Comparison Table (Place this at the end)
+        st.markdown("<div class='input-card'>", unsafe_allow_html=True)
+        st.markdown("### 📋 Comparative Analysis Overview")
+        
+        # Prepare table data
+        comparison_df = df[["Candidate", "Total Score", "Skills", "Experience", "Education", "ATS Score"]].copy()
+        comparison_df = comparison_df.sort_values(by="Total Score", ascending=False)
+        
+        # Formatting for the table
+        for col in ["Total Score", "Skills", "Experience", "Education", "ATS Score"]:
+            comparison_df[col] = comparison_df[col].apply(lambda x: f"{x}%")
+            
+        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
