@@ -35,9 +35,9 @@ st.markdown("""
         margin-bottom: 20px;
     }
 
-    /* ALERT BUTTON CSS */
+    /* ALERT BUTTON CSS - Indigo to Green Hover */
     div.stButton > button:first-child {
-        background-color: #4F46E5 !important; /* Premium Indigo */
+        background-color: #4F46E5 !important;
         color: white !important;
         border: none !important;
         padding: 15px 30px !important;
@@ -50,8 +50,8 @@ st.markdown("""
     }
 
     div.stButton > button:first-child:hover {
-        background-color: #059669 !important; /* Success Green on Hover */
-        transform: scale(1.02) !important;
+        background-color: #059669 !important;
+        transform: scale(1.01) !important;
         box-shadow: 0 6px 20px rgba(5, 150, 105, 0.23) !important;
     }
 
@@ -85,7 +85,8 @@ with st.sidebar:
     st.markdown("<p style='color:#6366F1; font-size:12px; font-weight:600; margin-top:-15px;'>NLP RELEVANCE ENGINE</p>", unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    page = st.radio("WORKFLOW", ["Evaluation Workspace", "Analysis Insights"])
+    # UPDATED NAVIGATION
+    page = st.radio("WORKFLOW", ["Dashboard", "Analysis Insights"])
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:10px; color:#94A3B8; font-weight:800; letter-spacing:0.1em;'>SYSTEM STATE</p>", unsafe_allow_html=True)
@@ -95,7 +96,7 @@ with st.sidebar:
         st.markdown(f"<div class='status-item'>{label} <span class='status-value'>{val}</span></div>", unsafe_allow_html=True)
     st.success("SYSTEM READY")
 
-# ================= WORKFLOW: DASHBOARD =================
+# ================= WORKFLOW: DASHBOARD (INPUT) =================
 if page == "Dashboard":
     st.markdown("""
         <div class="title-container">
@@ -121,7 +122,7 @@ if page == "Dashboard":
         st.info("System optimized for PDF and DOCX formats.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # RUN ANALYSIS BUTTON SECTION
+    # RUN ANALYSIS BUTTON
     st.markdown("<br>", unsafe_allow_html=True)
     _, center_col, _ = st.columns([1.5, 1, 1.5])
     with center_col:
@@ -135,11 +136,18 @@ if page == "Dashboard":
                         text = extract_text_from_file(file)
                         scores = compute_similarity(job_desc, text)
                         final, breakdown = weighted_score(scores)
+                        ats = ats_feedback(text, job_desc)
+                        
                         results.append({
-                            "Candidate": file.name, "Total Score": final,
-                            "Skills": breakdown["skills"], "Experience": breakdown["experience"],
-                            "Education": breakdown["education"], "Feedback": generate_feedback(scores),
-                            "Matched": scores["skills_matched"], "Missing": scores["skills_missing"]
+                            "Candidate": file.name, 
+                            "Total Score": final,
+                            "Skills": breakdown["skills"], 
+                            "Experience": breakdown["experience"],
+                            "Education": breakdown["education"], 
+                            "Feedback": generate_feedback(scores),
+                            "Matched": scores["skills_matched"], 
+                            "Missing": scores["skills_missing"],
+                            "ATS Score": ats["score"]
                         })
                     st.session_state.results = results
                     st.success("Analysis Complete! Head to 'Analysis Insights' in the sidebar.")
@@ -147,7 +155,7 @@ if page == "Dashboard":
 # ================= WORKFLOW: ANALYSIS INSIGHTS =================
 elif page == "Analysis Insights":
     if "results" not in st.session_state or not st.session_state.results:
-        st.warning("⚠️ No data analyzed yet. Please go to 'Evaluation Workspace' and click 'Run AI Analysis' first.")
+        st.warning("⚠️ No data analyzed yet. Please go to 'Dashboard' and click 'Run AI Analysis' first.")
     else:
         st.markdown("## Analysis Insights")
         df = pd.DataFrame(st.session_state.results)
@@ -181,15 +189,14 @@ elif page == "Analysis Insights":
             for s in data["Missing"]: st.write(f"❌ {s}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # NEW: Comparison Table (Place this at the end)
+        # Comparison Table
         st.markdown("<div class='input-card'>", unsafe_allow_html=True)
         st.markdown("### 📋 Comparative Analysis Overview")
         
-        # Prepare table data
-        comparison_df = df[["Candidate", "Total Score", "Skills", "Experience", "Education", "ATS Score"]].copy()
+        cols_to_show = ["Candidate", "Total Score", "Skills", "Experience", "Education", "ATS Score"]
+        comparison_df = df[cols_to_show].copy()
         comparison_df = comparison_df.sort_values(by="Total Score", ascending=False)
         
-        # Formatting for the table
         for col in ["Total Score", "Skills", "Experience", "Education", "ATS Score"]:
             comparison_df[col] = comparison_df[col].apply(lambda x: f"{x}%")
             
